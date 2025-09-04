@@ -66,7 +66,7 @@ export default function PreVR() {
           </Text>
         </View>
       </View>
-      <ScrollView className="flex-1 p-4 bg-white pb-[300px]">
+      <ScrollView className="flex-1 p-4 bg-white pb-[400px]">
         <FormCard icon="H" title="Pre-VR Assessment">
           <View className="flex-row gap-3">
             <View className="flex-1">
@@ -508,6 +508,9 @@ export default function PreVR() {
               />
             </View>
           )}
+          
+          {/* Extra space to ensure Comments field is not hidden by BottomBar */}
+          <View style={{ height: 150 }} />
         </FormCard>
       </ScrollView>
 

@@ -41,7 +41,7 @@ export default function ExitInterview() {
         </View>
       </View>
 
-      <ScrollView className="flex-1 p-4 bg-bg pb-[300px]">
+      <ScrollView className="flex-1 p-4 bg-bg pb-[400px]">
         <FormCard icon="PI" title="Exit Interview">
           <View className="flex-row gap-3">
             <View className="flex-1"><Field label="Participant ID" placeholder={`Participant ID: ${patientId}`} /></View>
@@ -343,6 +343,9 @@ export default function ExitInterview() {
             <View className="flex-1"><Field label="Interviewer Signature (full name)" placeholder="Interviewer full name" /></View>
             <View className="flex-1"><DateField label="Date" /></View>
           </View>
+          
+          {/* Extra space to ensure last field is not hidden by BottomBar */}
+          <View style={{ height: 150 }} />
         </FormCard>
       </ScrollView>
 

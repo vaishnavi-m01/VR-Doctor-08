@@ -189,7 +189,7 @@ export default function SocioDemographicWithHandlers() {
         </View>
       )}
 
-      <ScrollView className="flex-1 p-4 bg-bg pb-[300px]">
+      <ScrollView className="flex-1 p-4 bg-bg pb-[400px]">
         <FormCard icon="👤" title="Section 1: Personal Information">
           {/* Age Field */}
           <View className="mt-3">

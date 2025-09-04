@@ -291,7 +291,7 @@ export default function SocioDemographicWithValidation() {
         </View>
       )}
 
-      <ScrollView className="flex-1 p-4 bg-bg pb-[300px]">
+      <ScrollView className="flex-1 p-4 bg-bg pb-[400px]">
         {/* Validation Summary */}
         {validationSummary.hasData && (
           <FormCard icon="📊" title="Form Progress">

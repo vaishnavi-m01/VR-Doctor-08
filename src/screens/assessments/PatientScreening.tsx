@@ -73,7 +73,7 @@ export default function PatientScreening() {
         </View>
       </View>
 
-      <ScrollView className="flex-1 p-4 bg-bg pb-[300px]">
+      <ScrollView className="flex-1 p-4 bg-bg pb-[400px]">
         <FormCard icon="D" title="Patient Screening">
           <View className="flex-row gap-3">
             <View className="flex-1">
@@ -280,6 +280,9 @@ export default function PatientScreening() {
               multiline
             />
           </View>
+          
+          {/* Extra space to ensure Notes field is not hidden by BottomBar */}
+          <View style={{ height: 150 }} />
         </FormCard>
       </ScrollView>
 

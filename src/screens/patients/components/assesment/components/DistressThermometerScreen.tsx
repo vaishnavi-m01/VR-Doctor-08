@@ -38,7 +38,8 @@ export default function DistressThermometerScreen() {
     selectedProblems, setSelectedProblems] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedWeek, setSelectedWeek] = useState("week1");
+  const [selectedWeek, setSelectedWeek] = useState("");
+  const [showWeekDropdown, setShowWeekDropdown] = useState(false);
 
 
 
@@ -61,7 +62,7 @@ export default function DistressThermometerScreen() {
   };
 
 
-  const getData = async (weekNo = 1) => {
+  const getData = async (weekNo = parseInt(selectedWeek.replace('week', ''))) => {
     try {
       setLoading(true);
       setError(null);
@@ -109,7 +110,7 @@ export default function DistressThermometerScreen() {
 
   useEffect(() => {
     getData();
-  }, []);
+  }, [selectedWeek]);
 
 
 
@@ -131,12 +132,12 @@ export default function DistressThermometerScreen() {
         }))
       );
 
-      const reqObj = {
-        ParticipantId: `${patientId}`,
-        DistressThermometer: v,
-        WeekNo: 1,
-        FactGData: factGData,
-      };
+             const reqObj = {
+         ParticipantId: `${patientId}`,
+         DistressThermometer: v,
+         WeekNo: selectedWeek ? parseInt(selectedWeek.replace('week', '')) : 1,
+         FactGData: factGData,
+       };
 
       console.log(" Saving payloadddd:", reqObj);
 
@@ -169,69 +170,119 @@ export default function DistressThermometerScreen() {
     }
   };
 
-
+  const handleClear = () => {
+    setV(0);
+    setNotes("");
+    setSelectedProblems({});
+    setSelectedWeek(''); // Reset week dropdown to "Select Week"
+    setShowWeekDropdown(false); // Close dropdown if open
+  };
 
     return (
     <>
-      {/* Header Card */}
-      <View className="px-4 pt-2">
-        <View className="bg-white border-b border-gray-200 rounded-xl p-4 flex-row justify-between items-center shadow-sm">
-          <View className="flex-1">
-            <Text className="text-lg font-bold text-green-600">
-              Participant ID: {patientId}
-            </Text>
+             {/* Header Card */}
+       <View className="px-4 pt-4">
+         <View className="bg-white border-b border-gray-200 rounded-xl p-4 flex-row justify-between items-center shadow-sm">
+           <Text className="text-lg font-bold text-green-600">
+             Participant ID: {patientId}
+           </Text>
+ 
+           <Text className="text-base font-semibold text-green-600">
+             Study ID: {studyId || 'N/A'}
+           </Text>
+ 
+           <View className="flex-row items-center gap-3">
+             <Text className="text-base font-semibold text-gray-700">
+               Age: {age || "Not specified"}
+             </Text>
+             
+             {/* Week Dropdown - Next to Age */}
+             <View className="w-32">
+               <Pressable 
+                 className="bg-gray-100 border border-gray-200 rounded-lg px-3 py-2 flex-row justify-between items-center"
+                 onPress={() => setShowWeekDropdown(!showWeekDropdown)}
+                 style={{
+                   backgroundColor: '#f8f9fa',
+                   borderColor: '#e5e7eb',
+                   borderRadius: 8,
+                 }}
+               >
+                 <Text className="text-sm text-gray-700">
+                   {selectedWeek === "week1" ? "Week 1" : 
+                    selectedWeek === "week2" ? "Week 2" : 
+                    selectedWeek === "week3" ? "Week 3" : 
+                    selectedWeek === "week4" ? "Week 4" : "Select Week"}
+                 </Text>
+                 <Text className="text-gray-500 text-xs">▼</Text>
+               </Pressable>
+             </View>
+           </View>
+         </View>
+         
+         {/* Dropdown Menu - Positioned outside the header container */}
+         {showWeekDropdown && (
+           <View className="absolute top-20 right-6 bg-white border border-gray-200 rounded-lg shadow-lg z-[9999] w-28">
+             <Pressable 
+               className="px-3 py-2 border-b border-gray-100"
+               onPress={() => {
+                 setSelectedWeek("week1");
+                 setShowWeekDropdown(false);
+               }}
+             >
+               <Text className="text-sm text-gray-700">Week 1</Text>
+             </Pressable>
+             <Pressable 
+               className="px-3 py-2 border-b border-gray-100"
+               onPress={() => {
+                 setSelectedWeek("week2");
+                 setShowWeekDropdown(false);
+               }}
+             >
+               <Text className="text-sm text-gray-700">Week 2</Text>
+             </Pressable>
+             <Pressable 
+               className="px-3 py-2 border-b border-gray-100"
+               onPress={() => {
+                 setSelectedWeek("week3");
+                 setShowWeekDropdown(false);
+               }}
+             >
+               <Text className="text-sm text-gray-700">Week 3</Text>
+             </Pressable>
+             <Pressable 
+               className="px-3 py-2"
+               onPress={() => {
+                 setSelectedWeek("week4");
+                 setShowWeekDropdown(false);
+               }}
+             >
+               <Text className="text-sm text-gray-700">Week 4</Text>
+             </Pressable>
+           </View>
+         )}
+       </View>       
 
-            <Text className="text-base font-semibold text-green-600">
-              Study ID: {studyId || 'N/A'}
-            </Text>
-
-            <Text className="text-base font-semibold text-gray-700">
-              Age: {age || "Not specified"}
-            </Text>
-          </View>
-
-          {/* Week Dropdown - Right side */}
-          <View className="bg-white border border-gray-300 rounded-lg shadow-sm">
-            <Picker
-              selectedValue={selectedWeek}
-              onValueChange={(itemValue) => setSelectedWeek(itemValue)}
-              style={{
-                width: 120,
-                color: "black",
-                fontSize: 14,
-                paddingVertical: 6,
-              }}
-              dropdownIconColor="gray"
-              mode="dropdown" // important for iOS/iPad
-            >
-              <Picker.Item label="Week 1" value="week1" />
-              <Picker.Item label="Week 2" value="week2" />
-              <Picker.Item label="Week 3" value="week3" />
-              <Picker.Item label="Week 4" value="week4" />
-            </Picker>
-          </View>
-        </View>
-      </View>       
-
-      <ScrollView className="flex-1 bg-gray-100 p-4 pb-[300px]">
+      <ScrollView className="flex-1 bg-gray-100 p-4 pb-[200px]">
         {/* Distress Thermometer Card */}
         <View className="bg-white rounded-lg p-4 shadow-md mb-4">
-          <View className="flex-row items-center mb-4">
-            <View className="w-10 h-10 rounded-full bg-[#E8F5E9] flex items-center justify-center mr-2">
-              <Text className="font-bold text-xl text-[#2E7D32]">DT</Text>
-            </View>
-            <View>
-              <Text className="font-bold text-lg text-[#333]">
-                Distress Thermometer
-              </Text>
-              <Text className="text-xs text-[#6b7a77]">
-                "Considering the past week, including today."
-              </Text>
-            </View>
-          </View>
+                     <View className="flex-row items-center mb-4">
+             <View className="flex-row items-center">
+               <View className="w-10 h-10 rounded-full bg-[#E8F5E9] flex items-center justify-center mr-2">
+                 <Text className="font-bold text-xl text-[#2E7D32]">DT</Text>
+               </View>
+               <View>
+                 <Text className="font-bold text-lg text-[#333]">
+                   Distress Thermometer
+                 </Text>
+                 <Text className="text-xs text-[#6b7a77]">
+                   "Considering the past week, including today."
+                 </Text>
+               </View>
+             </View>
+           </View>
 
-                     <View className="flex-row justify-between mb-2">
-             <View className="flex-1 mr-2">
+                                                                                       <View className="flex-row justify-between mb-2">
+             <View className="flex-1">
                <Text className="text-xs text-[#6b7a77] mb-2">Participant ID</Text>
                                <TextInput
                   className="bg-gray-100 border border-gray-200 rounded-xl px-4 py-3 text-base text-gray-700"
@@ -311,6 +362,9 @@ export default function DistressThermometerScreen() {
            </View>
         </View>
 
+                 {/* Extra space to ensure Other Problems field is not hidden by BottomBar */}
+         <View style={{ height: 100 }} />
+
         {/* Notes Section */}
         {/* <View className="bg-white rounded-lg p-4 shadow-md">
           <Text className="font-bold text-lg text-[#333] mb-4">Notes & Plan</Text>
@@ -346,6 +400,9 @@ export default function DistressThermometerScreen() {
 
 
       <BottomBar>
+        <Btn variant="light" onPress={handleClear}>
+          Clear
+        </Btn>
         <Btn variant="light" onPress={() => { }}>
           Validate
         </Btn>

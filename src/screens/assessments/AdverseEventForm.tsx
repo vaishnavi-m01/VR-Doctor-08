@@ -85,7 +85,7 @@ export default function AdverseEventForm() {
                 </View>
             </View>
 
-            <ScrollView className="flex-1 p-4 bg-bg pb-[300px]">
+            <ScrollView className="flex-1 p-4 bg-bg pb-[400px]">
                 <FormCard icon="AE" title="Adverse Event">
                     <View className="flex-row gap-3">
                         <DateField label="📅 Date of Report" value={reportDate} onChange={setReportDate} />
@@ -372,10 +372,8 @@ export default function AdverseEventForm() {
                     </Text>
                 </View>
 
-
-
-
-
+                {/* Extra space to ensure last content is not hidden by BottomBar */}
+                <View style={{ height: 150 }} />
 
             </ScrollView>
 

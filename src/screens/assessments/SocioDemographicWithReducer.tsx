@@ -197,7 +197,7 @@ export default function SocioDemographicWithReducer() {
         </View>
       )}
 
-      <ScrollView className="flex-1 p-4 bg-bg pb-[300px]">
+      <ScrollView className="flex-1 p-4 bg-bg pb-[400px]">
         <FormCard icon="👤" title="Section 1: Personal Information">
           <View className="mt-3">
             <Field

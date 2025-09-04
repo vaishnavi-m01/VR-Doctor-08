@@ -21,7 +21,7 @@ export default function FactG(){
 
   return (
     <>
-    <ScrollView className="flex-1 p-4 bg-bg pb-[300px]">
+    <ScrollView className="flex-1 p-4 bg-bg pb-[400px]">
       <FormCard icon="FG" title="FACT-G (Version 4)" desc="Considering the past 7 days, choose one number per line. 0=Not at all ... 4=Very much.">
         <View className="flex-row gap-3">
           <View className="flex-1"><Field label="Participant ID" placeholder={`${patientId}`}/></View>

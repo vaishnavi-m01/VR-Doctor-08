@@ -34,6 +34,8 @@ export default function StudyObservation() {
   const [deviation, setDeviation] = useState('');
   const [assistance, setAssistance] = useState('');
   const [resp, setResp] = useState<string[]>([]);
+  const [selectedWeek, setSelectedWeek] = useState("");
+  const [showWeekDropdown, setShowWeekDropdown] = useState(false);
 
   // Form field states using constants - properly typed as strings
   const [participantId, setParticipantId] = useState<string>(DEFAULT_PATIENT_INFO.PARTICIPANT_ID);
@@ -95,6 +97,7 @@ export default function StudyObservation() {
       const observationData = prepareFormSubmission({
         participantId,
         age,
+                 weekNo: selectedWeek ? parseInt(selectedWeek.replace('week', '')) : 1,
         dateTime,
         deviceId,
         observerName,
@@ -135,56 +138,123 @@ export default function StudyObservation() {
     }
   };
 
-  // Clear form function using constants
-  const handleClear = () => {
-    setCompleted('');
-    setTech('');
-    setDiscomfort('');
-    setDeviation('');
-    setResp([]);
-    setParticipantId(DEFAULT_PATIENT_INFO.PARTICIPANT_ID);
-    // setAge(DEFAULT_PATIENT_INFO.AGE);
+     // Clear form function using constants
+   const handleClear = () => {
+     setCompleted('');
+     setTech('');
+     setDiscomfort('');
+     setDeviation('');
+     setResp([]);
+     setParticipantId(DEFAULT_PATIENT_INFO.PARTICIPANT_ID);
+     // setAge(DEFAULT_PATIENT_INFO.AGE);
 
-    setDateTime('');
-    setDeviceId(SESSION_CONSTANTS.DEFAULT_DEVICE_ID);
-    setObserverName(SESSION_CONSTANTS.DEFAULT_OBSERVER);
-    setSessionNumber(SESSION_CONSTANTS.DEFAULT_SESSION_NUMBER);
-    setSessionName(SESSION_CONSTANTS.DEFAULT_SESSION_NAME);
-    setFactGScore('');
-    setDistressScore('');
-    setStartTime('');
-    setEndTime('');
-    setPreVRAssessment('');
-    setPostVRAssessment('');
-    setMidwayReason('');
-    setFollowInstructions('');
-    setOtherResponse('');
-    setTechDescription('');
-    setDiscomfortDescription('');
-    setDeviationDescription('');
-    setOtherObservations('');
-    Alert.alert('Success', getSuccessMessage('FORM_CLEARED'));
-  };
+     setDateTime('');
+     setDeviceId(SESSION_CONSTANTS.DEFAULT_DEVICE_ID);
+     setObserverName(SESSION_CONSTANTS.DEFAULT_OBSERVER);
+     setSessionNumber(SESSION_CONSTANTS.DEFAULT_SESSION_NUMBER);
+     setSessionName(SESSION_CONSTANTS.DEFAULT_SESSION_NAME);
+     setFactGScore('');
+     setDistressScore('');
+     setStartTime('');
+     setEndTime('');
+     setPreVRAssessment('');
+     setPostVRAssessment('');
+     setMidwayReason('');
+     setFollowInstructions('');
+     setOtherResponse('');
+     setTechDescription('');
+     setDiscomfortDescription('');
+     setDeviationDescription('');
+     setOtherObservations('');
+     setSelectedWeek(''); // Reset week dropdown to "Select Week"
+     setShowWeekDropdown(false); // Close dropdown if open
+     Alert.alert('Success', getSuccessMessage('FORM_CLEARED'));
+   };
 
   return (
     <>
-      <View className="px-4 pt-4">
-        <View className="bg-white border-b border-gray-200 rounded-xl p-4 flex-row justify-between items-center shadow-sm">
-          <Text className="font-zen text-lg font-bold text-green-600">
-            {FORM_LABELS.PARTICIPANT_ID}: {patientId || participantId}
-          </Text>
+             <View className="px-4 pt-4 relative">
+         <View className="bg-white border-b border-gray-200 rounded-xl p-4 flex-row justify-between items-center shadow-sm">
+           <Text className="font-zen text-lg font-bold text-green-600">
+             {FORM_LABELS.PARTICIPANT_ID}: {patientId || participantId}
+           </Text>
 
-          <Text className="font-zen text-base font-semibold text-green-600">
-            Study ID: {studyId || studyId || 'N/A'}
-          </Text>
+           <Text className="font-zen text-base font-semibold text-green-600">
+             Study ID: {studyId || studyId || 'N/A'}
+           </Text>
 
-          <Text className="font-zen text-base font-semibold text-gray-700">
-            {FORM_LABELS.AGE}: {age || 'Not specified'}
-          </Text>
-        </View>
-      </View>
+           <View className="flex-row items-center gap-3">
+             <Text className="font-zen text-base font-semibold text-gray-700">
+               {FORM_LABELS.AGE}: {age || 'Not specified'}
+             </Text>
+             
+             {/* Week Dropdown - Next to Age */}
+             <View className="w-32">
+               <Pressable 
+                 className="bg-gray-100 border border-gray-200 rounded-lg px-3 py-2 flex-row justify-between items-center"
+                 onPress={() => setShowWeekDropdown(!showWeekDropdown)}
+                 style={{
+                   backgroundColor: '#f8f9fa',
+                   borderColor: '#e5e7eb',
+                   borderRadius: 8,
+                 }}
+               >
+                 <Text className="text-sm text-gray-700">
+                   {selectedWeek === "week1" ? "Week 1" : 
+                    selectedWeek === "week2" ? "Week 2" : 
+                    selectedWeek === "week3" ? "Week 3" : 
+                    selectedWeek === "week4" ? "Week 4" : "Select Week"}
+                 </Text>
+                 <Text className="text-gray-500 text-xs">▼</Text>
+               </Pressable>
+             </View>
+           </View>
+         </View>
+         
+         {/* Dropdown Menu - Positioned outside the header container */}
+         {showWeekDropdown && (
+           <View className="absolute top-20 right-6 bg-white border border-gray-200 rounded-lg shadow-lg z-[9999] w-28">
+             <Pressable 
+               className="px-3 py-2 border-b border-gray-100"
+               onPress={() => {
+                 setSelectedWeek("week1");
+                 setShowWeekDropdown(false);
+               }}
+             >
+               <Text className="text-sm text-gray-700">Week 1</Text>
+             </Pressable>
+             <Pressable 
+               className="px-3 py-2 border-b border-gray-100"
+               onPress={() => {
+                 setSelectedWeek("week2");
+                 setShowWeekDropdown(false);
+               }}
+             >
+               <Text className="text-sm text-gray-700">Week 2</Text>
+             </Pressable>
+             <Pressable 
+               className="px-3 py-2 border-b border-gray-100"
+               onPress={() => {
+                 setSelectedWeek("week3");
+                 setShowWeekDropdown(false);
+               }}
+             >
+               <Text className="text-sm text-gray-700">Week 3</Text>
+             </Pressable>
+             <Pressable 
+               className="px-3 py-2"
+               onPress={() => {
+                 setSelectedWeek("week4");
+                 setShowWeekDropdown(false);
+               }}
+             >
+               <Text className="text-sm text-gray-700">Week 4</Text>
+             </Pressable>
+           </View>
+         )}
+       </View>
 
-      <ScrollView className="flex-1 p-4 bg-bg pb-[300px]">
+      <ScrollView className="flex-1 p-4 bg-bg pb-[400px]">
         <FormCard icon={ASSESSMENT_CONFIG.STUDY_OBSERVATION.ICON} title={ASSESSMENT_CONFIG.STUDY_OBSERVATION.TITLE}>
           <View className="flex-row flex-wrap gap-3">
             <View className="w-full md:w-[48%]">
@@ -650,6 +720,9 @@ export default function StudyObservation() {
               multiline
             />
           </View>
+          
+          {/* Extra space to ensure Other Observations field is not hidden by BottomBar */}
+          <View style={{ height: 150 }} />
         </FormCard>
       </ScrollView>
 

@@ -22,7 +22,7 @@ export default function Screening(){
 
   return (
     <>
-    <ScrollView className="flex-1 p-4 bg-bg pb-[300px]">
+    <ScrollView className="flex-1 p-4 bg-bg pb-[400px]">
       <FormCard icon="D" title="Particpant Screening">
         <View className="flex-row gap-3">
           <View className="flex-1"><Field label="Participant ID" placeholder={`Participant ID: ${patientId}`}/></View>

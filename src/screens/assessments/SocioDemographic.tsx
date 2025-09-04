@@ -352,7 +352,7 @@ export default function SocioDemographic() {
         </View>
       )}
 
-      <ScrollView className="flex-1 px-6 bg-bg pb-[300px]">
+      <ScrollView className="flex-1 px-6 bg-bg pb-[400px]">
 
         <FormCard icon="👤" title="Section 1: Personal Information">
           <View className="mt-6">
@@ -1036,6 +1036,9 @@ export default function SocioDemographic() {
                 onChange={setConsentDate}
               />
             </View>
+            
+            {/* Extra space to ensure Date field is not hidden by BottomBar */}
+            <View style={{ height: 100 }} />
           </View>
         </FormCard>
       </ScrollView>

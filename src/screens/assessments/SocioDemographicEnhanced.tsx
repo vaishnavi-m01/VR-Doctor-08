@@ -226,7 +226,7 @@ function SocioDemographicEnhanced() {
         </View>
       )}
 
-      <ScrollView className="flex-1 p-4 bg-bg pb-[300px]">
+      <ScrollView className="flex-1 p-4 bg-bg pb-[400px]">
         {/* Form Status */}
         {hasAnyData && (
           <FormCard icon="📊" title="Form Status">
