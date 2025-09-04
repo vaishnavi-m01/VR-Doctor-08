@@ -82,7 +82,7 @@ export default function Thermometer({ value, onChange, min = 0, max = 10 }: Prop
                 `}
               >
                 <Text className={`font-medium text-sm ${value === 0 ? 'text-white' : 'text-[#4b5f5a]'}`}>
-                  Reset 0
+                  Clear
                 </Text>
               </Pressable>
             </View>

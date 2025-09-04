@@ -48,7 +48,7 @@ export default function ParticipantAssessmentSplit() {
 
   // pagination states
   const [page, setPage] = useState(1);
-  const perPage = 3;
+  const perPage = 10;
 
 
   useFocusEffect(
