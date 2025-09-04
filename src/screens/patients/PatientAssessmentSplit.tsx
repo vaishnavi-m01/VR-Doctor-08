@@ -221,8 +221,8 @@ export default function ParticipantAssessmentSplit() {
           <ScrollView className="flex-1 p-3" contentContainerStyle={{ paddingBottom: 70 }}>
             {loading ? (
               <ActivityIndicator color="#0ea06c" />
-            ) : participants.length > 0 ? (
-              participants.map((p) => (
+            ) : paginatedParticipants.length > 0 ? (
+              paginatedParticipants.map((p) => (
                 <ListItem
                   key={p.ParticipantId}
                   item={p}
@@ -235,6 +235,18 @@ export default function ParticipantAssessmentSplit() {
                 <Text className="text-gray-500 text-lg">Patient not found</Text>
               </View>
             )}
+
+             {!loading && participants.length > perPage && (
+            <View className="pb-20">
+              <Pagination
+                value={page}
+                onChange={(pg) => setPage(pg)}
+                totalItems={participants.length}
+                perPage={perPage}
+              />
+
+            </View>
+          )} 
           </ScrollView>
         </View>
 

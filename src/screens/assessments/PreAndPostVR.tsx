@@ -11,6 +11,7 @@ import { RouteProp } from '@react-navigation/native';
 import { RootStackParamList } from '../../Navigation/types';
 import axios from 'axios';
 import { apiService } from 'src/services';
+import Toast from 'react-native-toast-message';
 
 type Question = {
   PPVRQMID: string;
@@ -26,19 +27,33 @@ export default function PreAndPostVR() {
   const route = useRoute<RouteProp<RootStackParamList, 'PreAndPostVR'>>();
   const { patientId, age, studyId } = route.params as { patientId: number; age: number; studyId: number };
 
+  const [sessionDate, setSessionDate] = useState<string>("");
+
   const [questions, setQuestions] = useState<Question[]>([]);
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [notes, setNotes] = useState<Record<string, string>>({});
+
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+
+  const [participantIdInput, setParticipantIdInput] = useState(`${patientId}`);
+  const [dateInput, setDateInput] = useState('');
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const fetchQuestions = async () => {
       try {
-        const res = await apiService.post<{ ResponseData: Question[] }>("/GetPrePostVRSessionQuestionData")
-;
+        const res = await apiService.post<{ ResponseData: Question[] }>("/GetPrePostVRSessionQuestionData");
         setQuestions(res.data.ResponseData);
       } catch (err) {
         console.error('Error fetching questions:', err);
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: 'Failed to load questions.',
+          position: 'top',
+          topOffset: 50,
+        });
       } finally {
         setLoading(false);
       }
@@ -46,8 +61,56 @@ export default function PreAndPostVR() {
     fetchQuestions();
   }, [studyId]);
 
+  useEffect(() => {
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      // Fetch questions first
+      const res = await apiService.post<{ ResponseData: Question[] }>("/GetPrePostVRSessionQuestionData");
+      setQuestions(res.data.ResponseData);
+
+      // Assuming there's an API to get saved answers for given patient & study
+      const answersRes = await apiService.post<{ ResponseData: Array<{ QuestionId: string, Answer: string, Notes?: string }> }>("/GetParticipantPrePostVRAnswers", {
+        ParticipantId: patientId,
+        StudyId: studyId,
+      });
+
+      if (answersRes.data.ResponseData) {
+        // Map ResponseData to answers and notes state
+        const loadedAnswers: Record<string, string> = {};
+        const loadedNotes: Record<string, string> = {};
+        for (const ans of answersRes.data.ResponseData) {
+          loadedAnswers[ans.QuestionId] = ans.Answer; 
+          if (ans.Notes) loadedNotes[ans.QuestionId] = ans.Notes;
+        }
+        setAnswers(loadedAnswers);
+        setNotes(loadedNotes);
+      }
+    } catch (err) {
+      console.error('Error fetching questions or answers:', err);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Failed to load questions or answers.',
+        position: 'top',
+        topOffset: 50,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchData();
+}, [patientId, studyId]);
+
+
   const handleAnswer = (id: string, value: string) => {
     setAnswers(prev => ({ ...prev, [id]: value }));
+      setErrors(prev => ({ ...prev, [id]: "" }));
+  };
+
+  const handleNote = (id: string, value: string) => {
+    setNotes(prev => ({ ...prev, [id]: value }));
   };
 
   const preQuestions = questions.filter(q => q.Type === 'Pre');
@@ -73,26 +136,93 @@ export default function PreAndPostVR() {
     return symptomKeys.some(id => answers[id] === 'Yes');
   }, [answers, questions]);
 
-  // Submit answers to API
+  const validateAnswers = () => {
+    
+    const newErrors: Record<string, string> = {};
+
+
+    if (!participantIdInput.trim()) {
+      newErrors['participantId'] = 'Participant ID is required';
+    }
+
+    // if (!dateInput.trim()) {
+    //   newErrors['date'] = 'Date is required';
+    // }
+
+    for (const question of questions) {
+      if (!answers[question.PPVRQMID]) {
+        newErrors[question.PPVRQMID] = 'Answer is required';
+      }
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSave = async () => {
+    if (!validateAnswers()) {
+      Toast.show({
+        type: 'error',
+        text1: 'Validation Error',
+        text2: 'Please answer all required questions before saving.',
+        position: 'top',
+        topOffset: 50,
+      });
+      return;
+    }
+
     setSubmitting(true);
     try {
-      const payload = Object.keys(answers).map(id => ({
-        PPVRQMID: id,
-        Answer: answers[id],
-        PatientId: patientId,
-        StudyId: studyId,
-      }));
+      const PPPVRId = "PPPVRID-2";
+      const sessionNo = "SessionNo-1";
+      const modifiedBy = "UH-1000";
+      const status = "1";
 
-      await apiService.post('/GetPrePostVRSessionQuestionData', { Responses: payload });
+      for (const question of questions) {
+        const answer = answers[question.PPVRQMID];
+     
+
+        const payload = {
+          PPPVRId: PPPVRId,
+          ParticipantId: `${patientId}`,
+          StudyId: studyId,
+          SessionNo: sessionNo,
+          QuestionId: question.PPVRQMID,
+          ScaleValue: "5", // static 5 as requested
+          Notes: notes[question.PPVRQMID] || "",
+          Status: status,
+          ModifiedBy: modifiedBy,
+        };
+
+        // Log the full payload before sending to API
+        console.log("Sending API payload:", JSON.stringify(payload, null, 2));
+
+        await apiService.post("/AddUpdateParticipantPrePostVRSessions", payload);
+      }
+      Toast.show({
+        type: 'success',
+        text1: 'Success',
+        text2: 'Responses saved successfully!',
+        position: 'top',
+        topOffset: 50,
+        visibilityTime: 2000,
+        onHide: () => navigation.goBack(),
+      });
 
       navigation.goBack();
     } catch (err) {
-      console.error('Error saving responses:', err);
+      console.error("Error saving responses:", err);
+       Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Failed to save responses.',
+        position: 'top',
+        topOffset: 50,
+      });
     } finally {
       setSubmitting(false);
     }
   };
+
 
   if (loading) {
     return (
@@ -118,9 +248,19 @@ export default function PreAndPostVR() {
           <View className="flex-row gap-3">
             <View className="flex-1">
               <Field label="Participant ID" placeholder={`Participant ID: ${patientId}`} />
+              {errors['participantId'] && (
+                <Text className="text-red-500 text-xs mt-1">{errors['participantId']}</Text>
+              )}
             </View>
             <View className="flex-1">
-              <DateField label="Date" />
+              <DateField 
+               label="Date" 
+                value={sessionDate} 
+                onChange={setSessionDate} 
+              />
+              {/* {errors['date'] && (
+                <Text className="text-red-500 text-xs mt-1">{errors['date']}</Text>
+              )} */}
             </View>
           </View>
         </FormCard>
@@ -149,9 +289,17 @@ export default function PreAndPostVR() {
                 ))}
               </View>
 
+              {errors[q.PPVRQMID] && (
+                <Text className="text-red-500 text-xs mt-1">{errors[q.PPVRQMID]}</Text>
+              )}
+
               {answers[q.PPVRQMID] === 'Yes' && q.QuestionName !== 'Do you feel good?' && (
                 <View className="mt-3">
-                  <Field label="Notes (optional)" placeholder="Add details…" />
+                  <Field 
+                    label="Notes (optional)" 
+                    placeholder="Add details…" 
+                    onChangeText={(text) => handleNote(q.PPVRQMID, text)}
+                  />
                 </View>
               )}
             </View>
@@ -181,16 +329,27 @@ export default function PreAndPostVR() {
                   </Pressable>
                 ))}
               </View>
+               {errors[q.PPVRQMID] && (
+                <Text className="text-red-500 text-xs mt-1">{errors[q.PPVRQMID]}</Text>
+              )}
 
               {/* Conditional extra inputs */}
               {q.QuestionName === 'Do you experience any discomfort?' && answers[q.PPVRQMID] === 'Yes' && (
                 <View className="mt-3">
-                  <Field label="Please describe" placeholder="Dizziness, nausea, etc." />
+                  <Field 
+                    label="Please describe" 
+                    placeholder="Dizziness, nausea, etc." 
+                    onChangeText={(text) => handleNote(q.PPVRQMID, text)}
+                  />
                 </View>
               )}
               {answers[q.PPVRQMID] === 'No' && q.QuestionName !== 'Do you experience any discomfort?' && (
                 <View className="mt-3">
-                  <Field label="Please specify" placeholder="e.g., audio low, visuals blurry…" />
+                  <Field 
+                    label="Please specify" 
+                    placeholder="e.g., audio low, visuals blurry…" 
+                    onChangeText={(text) => handleNote(q.PPVRQMID, text)}
+                  />
                 </View>
               )}
             </View>
