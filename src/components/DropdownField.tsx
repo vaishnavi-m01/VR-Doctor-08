@@ -9,6 +9,7 @@ interface DropdownFieldProps {
   value: string;
   onValueChange: (val: string) => void;
   options: DropdownOption[];
+  placeholder?: string;
 }
 
 export function DropdownField({
@@ -16,6 +17,7 @@ export function DropdownField({
   value,
   onValueChange,
   options,
+  placeholder
 }: DropdownFieldProps) {
   return (
     <View className="mb-4 w-full">
@@ -36,6 +38,9 @@ export function DropdownField({
             fontSize: Platform.OS === "ios" ? 16 : 15,
           }}
         >
+          {placeholder && (
+            <Picker.Item label={placeholder} value="" enabled={false} />
+          )}
           {options.map((opt) => (
             <Picker.Item
               key={opt.value}

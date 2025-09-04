@@ -12,6 +12,8 @@ import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
 import { RootStackParamList } from '../../Navigation/types';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { apiService } from 'src/services';
+import Toast from 'react-native-toast-message';
+
 
 
 interface ClinicalChecklist {
@@ -43,10 +45,10 @@ export default function PatientScreening() {
   const [clinicalChecklist, setClinicalChecklist] = useState<ClinicalChecklist[]>([]);
   const [conds, setConds] = useState<string[]>([]);
 
- const route = useRoute<RouteProp<RootStackParamList, 'PatientScreening'>>();
+  const route = useRoute<RouteProp<RootStackParamList, 'PatientScreening'>>();
   const { patientId, age, studyId } = route.params as { patientId: number, age: number, studyId: number };
 
-    useEffect(() => {
+  useEffect(() => {
     apiService
       .post<{ ResponseData: ClinicalChecklist[] }>("/GetParticipantMedicalExperienceData")
       .then((res) => {
@@ -54,6 +56,81 @@ export default function PatientScreening() {
       })
       .catch((err) => console.error(err));
   }, []);
+
+
+
+  const handleSave = async () => {
+    try {
+         // payload for vitals
+      const vitalsPayload = {
+        ParticipantId: `${patientId}`,
+        StudyId: `${studyId}`,
+        PulseRate: pulseRate,
+        BP: bloodPressure,
+        Temperature: temperature,
+        BMI: bmi,
+        SortKey: "0",
+        Status: "1",
+        ModifiedBy: "NURSE-001",
+      };
+
+      console.log("Vitals Payload:", vitalsPayload);
+
+      const vitalsRes = await apiService.post(
+        "/AddUpdateParticipantVitals",
+        vitalsPayload
+      );
+      console.log("Vitals Saved:", vitalsRes.data);
+
+      // --- Second payload: Screening Score ---
+      const selectedExperiences = clinicalChecklist
+        .filter((item) => conds.includes(item.ExeperiencType))
+        .map((item) => item.PMEMID)
+        .join(",");
+
+      const ParticipantMedicalScreening = {
+
+        ParticipantId: `${patientId}`,
+        StudyId: `${studyId}`,
+        DistressTherometerScore: String(dt),
+        AnyElectranicImplantsLikeFacemaker: implants,
+        AnyProstheticsAndOrthoticsDevice: prosthetics,
+        AnyMedicalExperience: selectedExperiences,
+        SortKey: "1",
+        Status: "1",
+        ModifiedBy: "USER001",
+      };
+
+      console.log("Score Payload:", ParticipantMedicalScreening);
+
+      const scoreRes = await apiService.post(
+        "/AddUpdateParticipantMedicalScreening",
+        ParticipantMedicalScreening
+      );
+      console.log("Score Saved:", scoreRes.data);
+
+
+      Toast.show({
+        type: "success",
+        text1: "Success",
+        text2: "Patient screening saved successfully!",
+        position: "top",
+        topOffset: 50,
+      });
+    } catch (err) {
+      console.error("Save error:", err);
+
+
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Failed to save patient screening.",
+        position: "top",
+        topOffset: 50,
+      });
+    }
+  };
+
 
   return (
     <>
@@ -77,16 +154,16 @@ export default function PatientScreening() {
         <FormCard icon="D" title="Patient Screening">
           <View className="flex-row gap-3">
             <View className="flex-1">
-              <Field 
-                label="Participant ID" 
+              <Field
+                label="Participant ID"
                 placeholder={`Participant ID: ${patientId}`}
                 value={participantId}
                 onChangeText={setParticipantId}
               />
             </View>
             <View className="flex-1">
-              <DateField 
-                label="Date" 
+              <DateField
+                label="Date"
                 value={date}
                 onChange={setDate}
               />
@@ -97,7 +174,7 @@ export default function PatientScreening() {
         <FormCard icon="I" title="Medical Details">
           <View className="flex-row items-center justify-between mb-2">
             <Text className="text-xs text-muted">Distress Thermometer (0–10)</Text>
-            <Pressable 
+            <Pressable
               onPress={() => navigation.navigate('DistressThermometerScreen', { patientId, age, studyId })}
               className="px-4 py-3 bg-[#0ea06c] rounded-lg"
             >
@@ -109,16 +186,16 @@ export default function PatientScreening() {
             <View className="flex-1">
               <View className="flex-row items-center justify-between mb-1">
                 <Text className="text-xs text-[#4b5f5a]">FACT-G Total Score</Text>
-                <Pressable 
+                <Pressable
                   onPress={() => navigation.navigate('EdmontonFactGScreen', { patientId, age, studyId })}
                   className="px-4 py-3 bg-[#0ea06c] rounded-lg"
                 >
                   <Text className="text-xs text-white font-medium">Assessment: Fact-G scoring 0-108</Text>
                 </Pressable>
               </View>
-              <Field 
+              <Field
                 label=""
-                keyboardType="number-pad" 
+                keyboardType="number-pad"
                 placeholder="0–108"
                 value={factGScore}
                 onChangeText={setFactGScore}
@@ -126,12 +203,12 @@ export default function PatientScreening() {
             </View>
           </View>
 
-         <Text className="text-lg mt-3 font-semibold">Vitals</Text>
+          <Text className="text-lg mt-3 font-semibold">Vitals</Text>
           <View className="flex-row gap-3 mt-3">
-         
+
             <View className="flex-1">
-              <Field 
-                label="Pulse Rate (bpm)" 
+              <Field
+                label="Pulse Rate (bpm)"
                 placeholder="76"
                 value={pulseRate}
                 onChangeText={setPulseRate}
@@ -139,16 +216,16 @@ export default function PatientScreening() {
               />
             </View>
             <View className="flex-1">
-              <Field 
-                label="Blood Pressure (mmHg)" 
+              <Field
+                label="Blood Pressure (mmHg)"
                 placeholder="120/80"
                 value={bloodPressure}
                 onChangeText={setBloodPressure}
               />
             </View>
             <View className="flex-1">
-              <Field 
-                label="Temperature (°C)" 
+              <Field
+                label="Temperature (°C)"
                 placeholder="36.8"
                 value={temperature}
                 onChangeText={setTemperature}
@@ -156,8 +233,8 @@ export default function PatientScreening() {
               />
             </View>
             <View className="flex-1">
-              <Field 
-                label="BMI" 
+              <Field
+                label="BMI"
                 placeholder="22.5"
                 value={bmi}
                 onChangeText={setBmi}
@@ -173,43 +250,37 @@ export default function PatientScreening() {
               <Text className="text-xs text-[#4b5f5a] mb-2">Any electronic implants?</Text>
               <View className="flex-row gap-2">
                 {/* Yes Button */}
-                <Pressable 
+                <Pressable
                   onPress={() => setImplants('Yes')}
-                  className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${
-                    implants === 'Yes' 
-                      ? 'bg-[#4FC264]' 
-                      : 'bg-[#EBF6D6]'
-                  }`}
+                  className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${implants === 'Yes'
+                    ? 'bg-[#4FC264]'
+                    : 'bg-[#EBF6D6]'
+                    }`}
                 >
-                  <Text className={`text-lg mr-1 ${
-                    implants === 'Yes' ? 'text-white' : 'text-[#2c4a43]'
-                  }`}>
+                  <Text className={`text-lg mr-1 ${implants === 'Yes' ? 'text-white' : 'text-[#2c4a43]'
+                    }`}>
                     ✅
                   </Text>
-                  <Text className={`font-medium text-xs ${
-                    implants === 'Yes' ? 'text-white' : 'text-[#2c4a43]'
-                  }`}>
+                  <Text className={`font-medium text-xs ${implants === 'Yes' ? 'text-white' : 'text-[#2c4a43]'
+                    }`}>
                     Yes
                   </Text>
                 </Pressable>
 
                 {/* No Button */}
-                <Pressable 
+                <Pressable
                   onPress={() => setImplants('No')}
-                  className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${
-                    implants === 'No' 
-                      ? 'bg-[#4FC264]' 
-                      : 'bg-[#EBF6D6]'
-                  }`}
+                  className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${implants === 'No'
+                    ? 'bg-[#4FC264]'
+                    : 'bg-[#EBF6D6]'
+                    }`}
                 >
-                  <Text className={`text-lg mr-1 ${
-                    implants === 'No' ? 'text-white' : 'text-[#2c4a43]'
-                  }`}>
+                  <Text className={`text-lg mr-1 ${implants === 'No' ? 'text-white' : 'text-[#2c4a43]'
+                    }`}>
                     ❌
                   </Text>
-                  <Text className={`font-medium text-xs ${
-                    implants === 'No' ? 'text-white' : 'text-[#2c4a43]'
-                  }`}>
+                  <Text className={`font-medium text-xs ${implants === 'No' ? 'text-white' : 'text-[#2c4a43]'
+                    }`}>
                     No
                   </Text>
                 </Pressable>
@@ -219,43 +290,37 @@ export default function PatientScreening() {
               <Text className="text-xs text-[#4b5f5a] mb-2">Any prosthetics or orthotics device?</Text>
               <View className="flex-row gap-2">
                 {/* Yes Button */}
-                <Pressable 
+                <Pressable
                   onPress={() => setProsthetics('Yes')}
-                  className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${
-                    prosthetics === 'Yes' 
-                      ? 'bg-[#4FC264]' 
-                      : 'bg-[#EBF6D6]'
-                  }`}
+                  className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${prosthetics === 'Yes'
+                    ? 'bg-[#4FC264]'
+                    : 'bg-[#EBF6D6]'
+                    }`}
                 >
-                  <Text className={`text-lg mr-1 ${
-                    prosthetics === 'Yes' ? 'text-white' : 'text-[#2c4a43]'
-                  }`}>
+                  <Text className={`text-lg mr-1 ${prosthetics === 'Yes' ? 'text-white' : 'text-[#2c4a43]'
+                    }`}>
                     ✅
                   </Text>
-                  <Text className={`font-medium text-xs ${
-                    prosthetics === 'Yes' ? 'text-white' : 'text-[#2c4a43]'
-                  }`}>
+                  <Text className={`font-medium text-xs ${prosthetics === 'Yes' ? 'text-white' : 'text-[#2c4a43]'
+                    }`}>
                     Yes
                   </Text>
                 </Pressable>
 
                 {/* No Button */}
-                <Pressable 
+                <Pressable
                   onPress={() => setProsthetics('No')}
-                  className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${
-                    prosthetics === 'No' 
-                      ? 'bg-[#4FC264]' 
-                      : 'bg-[#EBF6D6]'
-                  }`}
+                  className={`flex-1 flex-row items-center justify-center rounded-full py-3 px-2 ${prosthetics === 'No'
+                    ? 'bg-[#4FC264]'
+                    : 'bg-[#EBF6D6]'
+                    }`}
                 >
-                  <Text className={`text-lg mr-1 ${
-                    prosthetics === 'No' ? 'text-white' : 'text-[#2c4a43]'
-                  }`}>
+                  <Text className={`text-lg mr-1 ${prosthetics === 'No' ? 'text-white' : 'text-[#2c4a43]'
+                    }`}>
                     ❌
                   </Text>
-                  <Text className={`font-medium text-xs ${
-                    prosthetics === 'No' ? 'text-white' : 'text-[#2c4a43]'
-                  }`}>
+                  <Text className={`font-medium text-xs ${prosthetics === 'No' ? 'text-white' : 'text-[#2c4a43]'
+                    }`}>
                     No
                   </Text>
                 </Pressable>
@@ -264,14 +329,14 @@ export default function PatientScreening() {
           </View>
         </FormCard>
 
-       <FormCard icon="✔︎" title="Clinical Checklist">
+        <FormCard icon="✔︎" title="Clinical Checklist">
           <Chip
             items={clinicalChecklist.map(item => item.ExeperiencType)} // 👈 use API values
             value={conds}
             onChange={setConds}
           />
 
-          <View className="mt-3">
+          {/* <View className="mt-3">
             <Field
               label="Notes (optional)"
               placeholder="Add any clarifications…"
@@ -279,8 +344,8 @@ export default function PatientScreening() {
               onChangeText={setNotes}
               multiline
             />
-          </View>
-          
+          </View> */}
+
           {/* Extra space to ensure Notes field is not hidden by BottomBar */}
           <View style={{ height: 150 }} />
         </FormCard>
@@ -288,7 +353,7 @@ export default function PatientScreening() {
 
       <BottomBar>
         <Btn variant="light" onPress={() => { }} className="py-4">Validate</Btn>
-        <Btn onPress={() => { }} className="py-4">Save Screening</Btn>
+        <Btn onPress={() => { handleSave}} className="py-4">Save Screening</Btn>
       </BottomBar>
     </>
   );

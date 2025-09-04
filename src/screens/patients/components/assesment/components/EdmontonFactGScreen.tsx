@@ -92,7 +92,7 @@ export default function EdmontonFactGScreen() {
       const response = await apiService.post<FactGResponse>(
         "/getParticipantFactGQuestionBaseline",
         {
-          WeekNo: weekNo,
+          // WeekNo: weekNo,
           ParticipantId: `${patientId}`,
         }
       );
@@ -410,22 +410,22 @@ export default function EdmontonFactGScreen() {
             <View className="flex-1">
               <Field label="Participant ID" placeholder={`${patientId}`} editable={false} />
             </View>
-            <View className="flex-1">
+            {/* <View className="flex-1">
               <Field
                 label="Assessed On"
                 placeholder="YYYY-MM-DD"
                 value={assessedOn}
                 onChangeText={setAssessedOn}
               />
-            </View>
-            <View className="flex-1">
+            </View> */}
+            {/* <View className="flex-1">
               <Field
                 label="Assessed By"
                 placeholder="Name & role"
                 value={assessedBy}
                 onChangeText={setAssessedBy}
               />
-            </View>
+            </View> */}
           </View>
         </FormCard>
 

@@ -14,6 +14,7 @@ import { apiService } from 'src/services';
 import Toast from 'react-native-toast-message';
 import apiClient from 'src/services/apiClient';
 import { DropdownField } from '@components/DropdownField';
+import { formatForDB, formatForUI } from 'src/utils/date';
 
 
 
@@ -44,6 +45,8 @@ interface ParticipantDetails {
   PhysicalActivityLevel?: string;
   StressLevels?: string;
   TechnologyExperience?: string;
+  Signature?: string;
+  SignatureDate?: Date | string;
 }
 
 
@@ -117,7 +120,9 @@ export default function SocioDemographic() {
   const [technologyExperience, setTechnologyExperience] = useState("");
 
   const [participantSignature, setParticipantSignature] = useState("");
-  const [consentDate, setConsentDate] = useState("");
+  const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+  const [consentDate, setConsentDate] = useState<string>(today);
+
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
 
@@ -169,6 +174,7 @@ export default function SocioDemographic() {
 
 
 
+
   useEffect(() => {
     if (isEditMode) {
       (async () => {
@@ -209,6 +215,17 @@ export default function SocioDemographic() {
             setPhysicalActivityLevel(data.PhysicalActivityLevel ?? "");
             setStressLevels(data.StressLevels ?? "");
             setTechnologyExperience(data.TechnologyExperience ?? "");
+
+            setParticipantSignature(data.Signature);
+            if (data?.SignatureDate) {
+              const dbDate = new Date(data.SignatureDate)
+                .toISOString()
+                .split("T")[0];
+              setConsentDate(dbDate);
+            } else {
+              setConsentDate("");
+            }
+
           }
         } catch (err) {
           Toast.show({
@@ -283,7 +300,12 @@ export default function SocioDemographic() {
         AlcoholConsumption: alcoholConsumption,
         PhysicalActivityLevel: physicalActivityLevel,
         StressLevels: stressLevels,
-        TechnologyExperience: technologyExperience
+        TechnologyExperience: technologyExperience,
+        // createdAtDate:consentDate,
+
+        Signature: participantSignature,
+        SignatureDate: consentDate
+
       };
 
       let response;
@@ -682,9 +704,12 @@ export default function SocioDemographic() {
           <DropdownField
             label="Cancer Diagnosis"
             value={cancerDiagnosis}
+            placeholder="Select cancer type"
             onValueChange={(val) => setCancerDiagnosis(val)}
             options={cancerTypeOptions}
-          />
+          /> {errors.cancerDiagnosis && (
+            <Text className="text-red-500 text-sm mt-2">{errors.cancerDiagnosis}</Text>
+          )}
 
 
 
@@ -1032,11 +1057,12 @@ export default function SocioDemographic() {
             <View className="mt-4">
               <DateField
                 label="Date"
-                value={consentDate}
-                onChange={setConsentDate}
+                value={formatForUI(consentDate)}      
+                onChange={(val) => setConsentDate(formatForDB(val))} 
               />
             </View>
-            
+
+
             {/* Extra space to ensure Date field is not hidden by BottomBar */}
             <View style={{ height: 100 }} />
           </View>

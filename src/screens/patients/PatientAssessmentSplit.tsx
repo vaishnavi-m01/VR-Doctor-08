@@ -21,20 +21,20 @@ import Dashboard from './components/Dashboard';
 import { RootStackParamList } from '../../Navigation/types';
 import EvilIcons from '@expo/vector-icons/EvilIcons';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import axios from 'axios';
 import { apiService } from 'src/services';
 import Pagination from '../../components/Pagination';
 
 export interface Patient {
-  id: number;                  // using ParticipantId as id
+  id: number;
   ParticipantId: number;
   age: number;
+  studyId?: number;
   status: string;
   gender: string;
   cancerType: string;
   stage: string;
   name?: string;
-  weightKg?: number;           // optional to satisfy ListItem typing
+  weightKg?: number;
 }
 
 export default function ParticipantAssessmentSplit() {
@@ -42,23 +42,22 @@ export default function ParticipantAssessmentSplit() {
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [participants, setParticipants] = useState<Patient[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [selId, setSelId] = useState<number | null>(null); // holds ParticipantId
+  const [selId, setSelId] = useState<number | null>(null);
   const [tab, setTab] = useState('assessment');
   const [searchText, setSearchText] = useState("");
 
   // pagination states
   const [page, setPage] = useState(1);
-  const perPage = 10;
-
+  const perPage = 8;
+  const [totalItems, setTotalItems] = useState(0);
 
   useFocusEffect(
     useCallback(() => {
-      fetchParticipants();
+      fetchParticipants("", 1);
     }, [])
   );
 
-
-   const fetchParticipants = async (search: string = "") => {
+  const fetchParticipants = async (search: string = "", pageNo: number = 1) => {
     try {
       setLoading(true);
 
@@ -66,28 +65,23 @@ export default function ParticipantAssessmentSplit() {
         StudyId: "CS-0001",
         CriteriaStatus: "Included",
         GroupType: "Trial",
-        PageNo: 1,
+        PageNo: pageNo,
+        PerPage: perPage,
       };
 
       const trimmedSearch = search.trim();
       const lowerSearch = trimmedSearch.toLowerCase();
 
       if (trimmedSearch !== "") {
-
         if (["male", "female", "other"].includes(lowerSearch)) {
-          requestBody.Gender = lowerSearch.charAt(0).toUpperCase() + lowerSearch.slice(1);
-        }
-
-        else if (/^PID-\d+$/i.test(trimmedSearch)) {
+          requestBody.Gender =
+            lowerSearch.charAt(0).toUpperCase() + lowerSearch.slice(1);
+        } else if (/^PID-\d+$/i.test(trimmedSearch)) {
           requestBody.SearchString = trimmedSearch;
-        }
-
-        else if (!isNaN(Number(trimmedSearch))) {
+        } else if (!isNaN(Number(trimmedSearch))) {
           requestBody.AgeFrom = Number(trimmedSearch);
           requestBody.AgeTo = Number(trimmedSearch);
-        }
-
-        else {
+        } else {
           requestBody.SearchString = trimmedSearch;
         }
       }
@@ -104,7 +98,9 @@ export default function ParticipantAssessmentSplit() {
           studyId: item.StudyId,
           age: Number(item.Age) ?? 0,
           status: item.CriteriaStatus?.toLowerCase() || "pending",
-          gender: ["Male", "Female", "Other"].includes(item.Gender) ? item.Gender : "Unknown",
+          gender: ["Male", "Female", "Other"].includes(item.Gender)
+            ? item.Gender
+            : "Unknown",
           cancerType: item.CancerDiagnosis || "N/A",
           stage: item.StageOfCancer || "N/A",
           name: item.Name ?? undefined,
@@ -112,6 +108,9 @@ export default function ParticipantAssessmentSplit() {
 
         setParticipants(parsed);
         setSelId(parsed[0]?.ParticipantId ?? null);
+
+        // ✅ set real total count (fallback to current length)
+        setTotalItems(response.data.TotalCount ?? parsed.length);
       }
     } catch (error) {
       console.error("Failed to fetch participants:", error);
@@ -120,31 +119,22 @@ export default function ParticipantAssessmentSplit() {
     }
   };
 
-
   const sel = participants.find((p) => p.ParticipantId === selId);
-
-  // Slice participants for current page
-  const paginatedParticipants = participants.slice(
-    (page - 1) * perPage,
-    page * perPage
-  );
-
 
   const renderTabContent = () => {
     const patientId = sel?.ParticipantId || 0;
-    const studyId = sel?.studyId || 0
-    console.log("StudyId",studyId)
+    const studyId = sel?.studyId || 0;
     const age = sel?.age ?? 0;
 
     switch (tab) {
       case 'dash':
-        return <Dashboard patientId={patientId} age={age} studyId={studyId}/>;
+        return <Dashboard patientId={patientId} age={age} studyId={studyId} />;
       case 'info':
-        return <ParticipantInfo patientId={patientId} age={age} studyId={studyId}/>;
+        return <ParticipantInfo patientId={patientId} age={age} studyId={studyId} />;
       case 'orie':
-        return <OrientationTab patientId={patientId} age={age} studyId={studyId}/>;
+        return <OrientationTab patientId={patientId} age={age} studyId={studyId} />;
       case 'assessment':
-        return <AssessmentTab patientId={patientId} age={age} studyId={studyId}/>;
+        return <AssessmentTab patientId={patientId} age={age} studyId={studyId} />;
       case ' VR':
         return <VRTab patientId={patientId} age={age} studyId={studyId} />;
       case 'notification':
@@ -153,7 +143,6 @@ export default function ParticipantAssessmentSplit() {
         return <AssessmentTab patientId={patientId} age={age} studyId={studyId} />;
     }
   };
-
 
   return (
     <View className="flex-1 bg-white">
@@ -164,23 +153,21 @@ export default function ParticipantAssessmentSplit() {
             <View className="flex-row items-center justify-between mb-2">
               <View className="flex-row items-center gap-2">
                 <Text className="font-extrabold">Participant List</Text>
-                <Text></Text>
-                {/* <Text className="text-[#21c57e]">●</Text> */}
-                <Image source={require("../../../assets/patientList.png")} ></Image>
+                <Image source={require("../../../assets/patientList.png")} />
               </View>
             </View>
             <Text className="text-xs text-[#6b7a77]">
-              List of Participants ({participants.length})
+              List of Participants ({totalItems})
             </Text>
 
             <View className="flex-row items-center space-x-2 mt-3">
               {/* Search Bar */}
               <View className="flex-row items-center bg-white border border-[#e6eeeb] rounded-2xl px-4 py-3 flex-1">
-                 <TextInput
-                  placeholder="Search by Patient ID,Age,Cancer Type"
+                <TextInput
+                  placeholder="Search by Patient ID, Age, Cancer Type"
                   value={searchText}
                   onChangeText={setSearchText}
-                  onSubmitEditing={() => fetchParticipants(searchText)}
+                  onSubmitEditing={() => fetchParticipants(searchText, 1)}
                   className="flex-1 text-base text-gray-700"
                   placeholderTextColor="#999"
                   style={{
@@ -190,7 +177,7 @@ export default function ParticipantAssessmentSplit() {
                   }}
                 />
 
-                <Pressable onPress={() => fetchParticipants(searchText)}>
+                <Pressable onPress={() => fetchParticipants(searchText, 1)}>
                   <EvilIcons name="search" size={24} color="#21c57e" />
                 </Pressable>
               </View>
@@ -204,11 +191,7 @@ export default function ParticipantAssessmentSplit() {
             {/* Add Participant Button */}
             <Pressable
               onPress={() =>
-                navigation.navigate('SocioDemographic', {
-                  // patientId: Date.now(),
-                  // age:age
-                  
-                })
+                navigation.navigate('SocioDemographic', {})
               }
               className="mt-3 bg-[#0ea06c] rounded-xl py-3 px-4 items-center"
             >
@@ -218,11 +201,12 @@ export default function ParticipantAssessmentSplit() {
             </Pressable>
           </View>
 
-          <ScrollView className="flex-1 p-3" contentContainerStyle={{ paddingBottom: 70 }}>
+          {/* List */}
+          <ScrollView className="flex-1 p-3" contentContainerStyle={{ paddingBottom: 20 }}>
             {loading ? (
               <ActivityIndicator color="#0ea06c" />
-            ) : paginatedParticipants.length > 0 ? (
-              paginatedParticipants.map((p) => (
+            ) : participants.length > 0 ? (
+              participants.map((p) => (
                 <ListItem
                   key={p.ParticipantId}
                   item={p}
@@ -235,19 +219,24 @@ export default function ParticipantAssessmentSplit() {
                 <Text className="text-gray-500 text-lg">Patient not found</Text>
               </View>
             )}
+          </ScrollView>
 
-             {!loading && participants.length > perPage && (
-            <View className="pb-20">
+          {/*   Pagination */}
+          {/* Pagination above bottom bar */}
+          {!loading && totalItems > 0 && (
+            <View className="p-3 border-t border-[#e6eeeb] bg-[#F6F7F7] mb-20">
               <Pagination
                 value={page}
-                onChange={(pg) => setPage(pg)}
-                totalItems={participants.length}
+                onChange={(pg) => {
+                  setPage(pg);
+                  fetchParticipants(searchText, pg);
+                }}
+                totalItems={totalItems}
                 perPage={perPage}
               />
-
             </View>
-          )} 
-          </ScrollView>
+          )}
+
         </View>
 
         {/* Right Pane - Participant Details */}

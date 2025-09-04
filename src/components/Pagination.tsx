@@ -35,7 +35,7 @@ export default function Pagination({
   const pages = getPages();
 
   return (
-    <View className="flex-row items-center justify-center space-x-2 bg-white rounded-xl p-4 shadow-md">
+    <View className="flex-row items-center justify-center space-x-2 bg-white rounded-xl p-4 ">
       {/* Previous */}
       <Pressable
         onPress={() => onChange(Math.max(1, value - 1))}
